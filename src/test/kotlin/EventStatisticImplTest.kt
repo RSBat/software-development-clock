@@ -22,10 +22,10 @@ internal class EventStatisticImplTest {
     @Test
     fun `record event multiple times`() {
         incAtTimestamps(listOf(
-            TEST_EVENT to Instant.EPOCH,
-            TEST_EVENT to Instant.EPOCH.plus(1, ChronoUnit.MINUTES),
-            TEST_EVENT to Instant.EPOCH.plus(5, ChronoUnit.MINUTES),
-            TEST_EVENT to Instant.EPOCH.plus(10, ChronoUnit.MINUTES),
+            TEST_EVENT to instantAtMinute(0),
+            TEST_EVENT to instantAtMinute(1),
+            TEST_EVENT to instantAtMinute(5),
+            TEST_EVENT to instantAtMinute(10),
         ))
 
         assertEquals(4.0 / 60, eventStatistic.getEventStatisticByName(TEST_EVENT))
@@ -34,9 +34,9 @@ internal class EventStatisticImplTest {
     @Test
     fun `different events do not affect each other`() {
         incAtTimestamps(listOf(
-            TEST_EVENT to Instant.EPOCH,
-            OTHER_EVENT to Instant.EPOCH.plus(1, ChronoUnit.MINUTES),
-            OTHER_EVENT to Instant.EPOCH.plus(5, ChronoUnit.MINUTES),
+            TEST_EVENT to instantAtMinute(0),
+            OTHER_EVENT to instantAtMinute(1),
+            OTHER_EVENT to instantAtMinute(5),
         ))
 
         assertEquals(1.0 / 60, eventStatistic.getEventStatisticByName(TEST_EVENT))
@@ -46,10 +46,10 @@ internal class EventStatisticImplTest {
     @Test
     fun `old events are not counted`() {
         incAtTimestamps(listOf(
-            TEST_EVENT to Instant.EPOCH,
-            TEST_EVENT to Instant.EPOCH.plus(1, ChronoUnit.MINUTES),
-            TEST_EVENT to Instant.EPOCH.plus(70, ChronoUnit.MINUTES),
-            TEST_EVENT to Instant.EPOCH.plus(80, ChronoUnit.MINUTES),
+            TEST_EVENT to instantAtMinute(0),
+            TEST_EVENT to instantAtMinute(1),
+            TEST_EVENT to instantAtMinute(70),
+            TEST_EVENT to instantAtMinute(80),
         ))
 
         assertEquals(2.0 / 60, eventStatistic.getEventStatisticByName(TEST_EVENT))
@@ -58,11 +58,11 @@ internal class EventStatisticImplTest {
     @Test
     fun `old events at call time are not counted`() {
         incAtTimestamps(listOf(
-            TEST_EVENT to Instant.EPOCH,
-            TEST_EVENT to Instant.EPOCH.plus(30, ChronoUnit.MINUTES),
+            TEST_EVENT to instantAtMinute(0),
+            TEST_EVENT to instantAtMinute(30),
         ))
 
-        testClock.instant = Instant.EPOCH.plus(70, ChronoUnit.MINUTES)
+        testClock.instant = instantAtMinute(70)
         assertEquals(1.0 / 60, eventStatistic.getEventStatisticByName(TEST_EVENT))
     }
 
@@ -83,9 +83,9 @@ internal class EventStatisticImplTest {
     @Test
     fun `when multiple events recorded stats contain all events`() {
         incAtTimestamps(listOf(
-            TEST_EVENT to Instant.EPOCH,
-            OTHER_EVENT to Instant.EPOCH.plus(1, ChronoUnit.MINUTES),
-            OTHER_EVENT to Instant.EPOCH.plus(5, ChronoUnit.MINUTES),
+            TEST_EVENT to instantAtMinute(0),
+            OTHER_EVENT to instantAtMinute(1),
+            OTHER_EVENT to instantAtMinute(5),
         ))
 
         val stats = eventStatistic.getAllEventStatistic()
@@ -97,10 +97,10 @@ internal class EventStatisticImplTest {
     @Test
     fun `old events are not in stats`() {
         incAtTimestamps(listOf(
-            TEST_EVENT to Instant.EPOCH,
-            TEST_EVENT to Instant.EPOCH.plus(1, ChronoUnit.MINUTES),
-            TEST_EVENT to Instant.EPOCH.plus(70, ChronoUnit.MINUTES),
-            TEST_EVENT to Instant.EPOCH.plus(80, ChronoUnit.MINUTES),
+            TEST_EVENT to instantAtMinute(0),
+            TEST_EVENT to instantAtMinute(1),
+            TEST_EVENT to instantAtMinute(70),
+            TEST_EVENT to instantAtMinute(80),
         ))
 
         val stats = eventStatistic.getAllEventStatistic()
@@ -111,11 +111,11 @@ internal class EventStatisticImplTest {
     @Test
     fun `old events at call time are not in stats`() {
         incAtTimestamps(listOf(
-            TEST_EVENT to Instant.EPOCH,
-            TEST_EVENT to Instant.EPOCH.plus(30, ChronoUnit.MINUTES),
+            TEST_EVENT to instantAtMinute(0),
+            TEST_EVENT to instantAtMinute(30),
         ))
 
-        testClock.instant = Instant.EPOCH.plus(70, ChronoUnit.MINUTES)
+        testClock.instant = instantAtMinute(70)
         val stats = eventStatistic.getAllEventStatistic()
         assertEquals(1, stats.size)
         assertEquals(1.0 / 60, stats[TEST_EVENT])
@@ -124,10 +124,10 @@ internal class EventStatisticImplTest {
     @Test
     fun `events with zero rpm are not in stats`() {
         incAtTimestamps(listOf(
-            TEST_EVENT to Instant.EPOCH,
+            TEST_EVENT to instantAtMinute(0),
         ))
 
-        testClock.instant = Instant.EPOCH.plus(70, ChronoUnit.MINUTES)
+        testClock.instant = instantAtMinute(70)
         val stats = eventStatistic.getAllEventStatistic()
         assertTrue(stats.isEmpty())
     }
@@ -140,6 +140,8 @@ internal class EventStatisticImplTest {
     private fun incAtTimestamps(events: List<Pair<String, Instant>>) {
         events.forEach { (name, instant) -> incAtTimestamp(name, instant) }
     }
+
+    private fun instantAtMinute(minute: Long) = Instant.EPOCH.plus(minute, ChronoUnit.MINUTES)
 
     class TestClock: Clock {
         var instant: Instant = Instant.EPOCH
